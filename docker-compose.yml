@@ -1,0 +1,52 @@
+services:
+  ghost:
+    image: ghost:latest
+    restart: always
+    ports:
+      - "2368:2368"
+    environment:
+      url: http://localhost:2368
+      database__client: mysql
+      database__connection__host: db
+      database__connection__user: ghost
+      database__connection__password: ghostpass123
+      database__connection__database: ghost_local
+      NODE_ENV: development
+      auth__admin__signin__type: password
+      auth__admin__sign_in__type: password
+      staffService__enableEmailSignin: "false"
+      privacy__useRpcForEmail: "false"
+      privacy__useDirectEmail: "true"
+      mail__transport: sendmail
+      mail__options__path: /usr/sbin/sendmail
+      mail__from: "admin@localhost"
+    volumes:
+      - ghost-content:/var/lib/ghost/content
+      - ./content/themes:/var/lib/ghost/content/themes
+      - ./content/settings:/var/lib/ghost/content/settings
+      - ./fake-sendmail.sh:/usr/sbin/sendmail
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: mysql:8.0
+    restart: always
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass123
+      MYSQL_DATABASE: ghost_local
+      MYSQL_USER: ghost
+      MYSQL_PASSWORD: ghostpass123
+    volumes:
+      - ghost-db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  ghost-content:
+  ghost-db:
